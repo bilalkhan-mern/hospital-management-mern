@@ -1,0 +1,20 @@
+uploads
+# dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# environment files
+.env
+frontend/.env
+backend/.env
+
+# build files
+dist/
+frontend/dist/
+
+# uploads (optional)
+backend/uploads/
+
+# system files
+.DS_Store
