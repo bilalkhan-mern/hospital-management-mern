@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/axios';
 
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initializeAuth = async () => {
+    const loadLoggedInUser = async () => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         setLoading(false);
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    initializeAuth();
+    loadLoggedInUser();
   }, []);
 
   const login = async (payload) => {
@@ -78,19 +78,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      login,
-      register,
-      registerDoctor,
-      logout,
-      setUser,
-      isAuthenticated: Boolean(user),
-    }),
-    [user, loading]
-  );
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    registerDoctor,
+    logout,
+    setUser,
+    isAuthenticated: Boolean(user),
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

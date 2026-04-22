@@ -16,5 +16,10 @@ frontend/dist/
 # uploads (optional)
 backend/uploads/
 
+# logs
+*.log
+frontend/*.log
+backend/*.log
+
 # system files
 .DS_Store
