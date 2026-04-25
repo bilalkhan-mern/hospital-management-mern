@@ -7,7 +7,7 @@ import Doctor from '../models/Doctor.js';
 import Department from '../models/Department.js';
 import { AppError } from '../utils/AppError.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/token.utils.js';
-import { isScheduleValid, normalizeSchedule } from '../utils/schedule.utils.js';
+import { normalizeSchedule } from '../utils/schedule.utils.js';
 import { normalizeAdminType } from '../utils/admin.utils.js';
 
 const buildAuthPayload = async (user) => {
@@ -90,10 +90,6 @@ export const registerDoctor = async (req, res) => {
   const departmentExists = await Department.findById(department);
   if (!departmentExists) {
     throw new AppError('Department not found.', StatusCodes.NOT_FOUND);
-  }
-
-  if (!isScheduleValid(schedule)) {
-    throw new AppError('Doctor schedule is invalid.', StatusCodes.BAD_REQUEST);
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);

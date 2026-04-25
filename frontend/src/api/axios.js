@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-const simpleMode = String(import.meta.env.VITE_SIMPLE_MODE || '').toLowerCase() === 'true';
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
@@ -17,10 +15,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (simpleMode) {
-      return Promise.reject(error);
-    }
-
+    // Simple-only build: no refresh-token retry; user re-logs in if token expires.
     const originalRequest = error.config;
     const refreshToken = localStorage.getItem('refreshToken');
 

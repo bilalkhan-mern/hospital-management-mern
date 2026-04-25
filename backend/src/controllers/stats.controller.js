@@ -57,28 +57,27 @@ export const getAdminStats = async (req, res) => {
     throw new AppError('Only admin can access admin statistics.', StatusCodes.FORBIDDEN);
   }
 
-  if (String(process.env.SIMPLE_MODE || '').toLowerCase() === 'true') {
-    res.json({
-      success: true,
-      data: {
-        appointmentsPerDay: [
-          { date: 'Day-1', count: 2 },
-          { date: 'Day-2', count: 1 },
-          { date: 'Day-3', count: 3 },
-          { date: 'Day-4', count: 2 },
-          { date: 'Day-5', count: 4 },
-          { date: 'Day-6', count: 1 },
-          { date: 'Day-7', count: 2 },
-        ],
-        appointmentStatus: [
-          { name: 'pending', value: 4 },
-          { name: 'completed', value: 3 },
-          { name: 'cancelled', value: 1 },
-        ],
-      },
-    });
-    return;
-  }
+  // Simple-only build: static chart data.
+  res.json({
+    success: true,
+    data: {
+      appointmentsPerDay: [
+        { date: 'Day-1', count: 2 },
+        { date: 'Day-2', count: 1 },
+        { date: 'Day-3', count: 3 },
+        { date: 'Day-4', count: 2 },
+        { date: 'Day-5', count: 4 },
+        { date: 'Day-6', count: 1 },
+        { date: 'Day-7', count: 2 },
+      ],
+      appointmentStatus: [
+        { name: 'pending', value: 4 },
+        { name: 'completed', value: 3 },
+        { name: 'cancelled', value: 1 },
+      ],
+    },
+  });
+  return;
 
   const [appointmentsPerDay, appointmentStatus] = await Promise.all([
     aggregateAppointmentsPerDay(),
@@ -115,23 +114,22 @@ export const getDoctorStats = async (req, res) => {
     throw new AppError('Doctor not found.', StatusCodes.NOT_FOUND);
   }
 
-  if (String(process.env.SIMPLE_MODE || '').toLowerCase() === 'true') {
-    res.json({
-      success: true,
-      data: {
-        appointmentsPerDay: [
-          { date: 'Day-1', count: 1 },
-          { date: 'Day-2', count: 0 },
-          { date: 'Day-3', count: 2 },
-          { date: 'Day-4', count: 1 },
-          { date: 'Day-5', count: 1 },
-          { date: 'Day-6', count: 0 },
-          { date: 'Day-7', count: 1 },
-        ],
-      },
-    });
-    return;
-  }
+  // Simple-only build: static chart data.
+  res.json({
+    success: true,
+    data: {
+      appointmentsPerDay: [
+        { date: 'Day-1', count: 1 },
+        { date: 'Day-2', count: 0 },
+        { date: 'Day-3', count: 2 },
+        { date: 'Day-4', count: 1 },
+        { date: 'Day-5', count: 1 },
+        { date: 'Day-6', count: 0 },
+        { date: 'Day-7', count: 1 },
+      ],
+    },
+  });
+  return;
 
   const appointmentsPerDay = await aggregateAppointmentsPerDay({ doctor: doctor._id });
 
@@ -164,23 +162,22 @@ export const getPatientStats = async (req, res) => {
     throw new AppError('Patient not found.', StatusCodes.NOT_FOUND);
   }
 
-  if (String(process.env.SIMPLE_MODE || '').toLowerCase() === 'true') {
-    res.json({
-      success: true,
-      data: {
-        visitHistory: [
-          { date: 'Day-1', count: 1 },
-          { date: 'Day-2', count: 0 },
-          { date: 'Day-3', count: 1 },
-          { date: 'Day-4', count: 0 },
-          { date: 'Day-5', count: 2 },
-          { date: 'Day-6', count: 0 },
-          { date: 'Day-7', count: 1 },
-        ],
-      },
-    });
-    return;
-  }
+  // Simple-only build: static chart data.
+  res.json({
+    success: true,
+    data: {
+      visitHistory: [
+        { date: 'Day-1', count: 1 },
+        { date: 'Day-2', count: 0 },
+        { date: 'Day-3', count: 1 },
+        { date: 'Day-4', count: 0 },
+        { date: 'Day-5', count: 2 },
+        { date: 'Day-6', count: 0 },
+        { date: 'Day-7', count: 1 },
+      ],
+    },
+  });
+  return;
 
   const visitHistory = await aggregateAppointmentsPerDay({ patient: patient._id });
 

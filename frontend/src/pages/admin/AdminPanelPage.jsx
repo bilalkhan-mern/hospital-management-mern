@@ -14,7 +14,7 @@ import { printInvoiceDocument, printReportSummaryDocument } from '../../lib/prin
 import { defaultSchedule, weekDayOptions } from '../../lib/schedule';
 import { useAuth } from '../../context/AuthContext';
 
-const simpleMode = String(import.meta.env.VITE_SIMPLE_MODE || '').toLowerCase() === 'true';
+const simpleMode = true;
 
 const AdminPanelPage = () => {
   const { user } = useAuth();

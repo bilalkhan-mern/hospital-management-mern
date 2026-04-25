@@ -62,9 +62,7 @@ export const createDoctor = async (req, res) => {
     throw new AppError('Department not found.', StatusCodes.NOT_FOUND);
   }
 
-  if (!isScheduleValid(req.body.schedule)) {
-    throw new AppError('Doctor schedule is invalid.', StatusCodes.BAD_REQUEST);
-  }
+  // Simple-only build: schedule validation is relaxed (slots are static).
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await User.create({
@@ -112,9 +110,7 @@ export const updateDoctor = async (req, res) => {
     throw new AppError('Doctor not found.', StatusCodes.NOT_FOUND);
   }
 
-  if (!isScheduleValid(req.body.schedule)) {
-    throw new AppError('Doctor schedule is invalid.', StatusCodes.BAD_REQUEST);
-  }
+  // Simple-only build: schedule validation is relaxed (slots are static).
 
   const departmentExists = await Department.findById(req.body.department);
   if (!departmentExists) {

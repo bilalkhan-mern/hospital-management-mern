@@ -6,7 +6,7 @@ import Prescription from '../models/Prescription.js';
 import { createAuditLog } from '../utils/audit.utils.js';
 import { AppError } from '../utils/AppError.js';
 import { mockSendEmail } from '../services/email.service.js';
-import { buildScheduleSummary, isScheduleValid } from '../utils/schedule.utils.js';
+import { buildScheduleSummary } from '../utils/schedule.utils.js';
 import { applyReschedule, assertAppointmentCanBeRescheduled, getAvailableSlotsForDoctorDate } from '../utils/appointment.utils.js';
 import { normalizePrescriptionOutput } from '../utils/prescription.utils.js';
 
@@ -109,10 +109,6 @@ export const getDoctorAvailableSlots = async (req, res) => {
   const appointmentDate = new Date(date);
   if (Number.isNaN(appointmentDate.getTime())) {
     throw new AppError('Invalid appointment date.', StatusCodes.BAD_REQUEST);
-  }
-
-  if (!isScheduleValid(doctor.schedule)) {
-    throw new AppError('Doctor schedule is not configured properly.', StatusCodes.BAD_REQUEST);
   }
 
   const slots = await getAvailableSlotsForDoctorDate({

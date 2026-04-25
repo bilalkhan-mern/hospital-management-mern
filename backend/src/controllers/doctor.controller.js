@@ -40,9 +40,7 @@ export const updateDoctorProfile = async (req, res) => {
     throw new AppError('Department not found.', StatusCodes.NOT_FOUND);
   }
 
-  if (!isScheduleValid(req.body.schedule)) {
-    throw new AppError('Doctor schedule is invalid.', StatusCodes.BAD_REQUEST);
-  }
+  // Simple-only build: schedule validation is relaxed (slots are static).
 
   doctor.user.name = req.body.name;
   doctor.user.phone = req.body.phone;

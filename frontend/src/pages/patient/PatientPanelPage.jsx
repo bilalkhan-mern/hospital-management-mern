@@ -16,7 +16,7 @@ import { printReportSummaryDocument } from '../../lib/printDocuments';
 import { printPrescriptionDocument } from '../../lib/printPrescription';
 import { reportTypeOptions } from '../../lib/reportTypes';
 
-const simpleMode = String(import.meta.env.VITE_SIMPLE_MODE || '').toLowerCase() === 'true';
+const simpleMode = true;
 
 const statusBadgeMap = {
   pending: 'bg-amber-100 text-amber-700',
@@ -673,9 +673,11 @@ const PatientPanelPage = () => {
                       </div>
                       {appointment.status === 'pending' && (
                         <div className="grid w-full gap-2 sm:flex sm:w-auto">
-                          <button type="button" className="btn-secondary w-full sm:w-auto" onClick={() => openReschedule(appointment)}>
-                            Reschedule
-                          </button>
+                          {!simpleMode && (
+                            <button type="button" className="btn-secondary w-full sm:w-auto" onClick={() => openReschedule(appointment)}>
+                              Reschedule
+                            </button>
+                          )}
                           <button type="button" className="btn-secondary w-full sm:w-auto" onClick={() => cancelAppointment(appointment._id)}>
                             Cancel Appointment
                           </button>
@@ -903,7 +905,7 @@ const PatientPanelPage = () => {
         )}
         </div>
 
-      {rescheduleModal.open && (
+      {!simpleMode && rescheduleModal.open && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/45 px-4">
           <div className="card w-full max-w-xl">
             <div className="flex items-start justify-between gap-4">
