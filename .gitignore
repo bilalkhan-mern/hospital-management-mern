@@ -23,3 +23,6 @@ backend/*.log
 
 # system files
 .DS_Store
+
+# practice folder (local learning only)
+practice/

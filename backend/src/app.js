@@ -14,7 +14,6 @@ import appointmentRoutes from './routes/appointment.routes.js';
 import departmentRoutes from './routes/department.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import statsRoutes from './routes/stats.routes.js';
-import pingRoutes from './learning/ping/ping.routes.js';
 import { errorHandler, notFound } from './middleware/error.middleware.js';
 
 const app = express();
@@ -58,7 +57,6 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/stats', statsRoutes);
-app.use('/api/ping', pingRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
