@@ -102,30 +102,4 @@ export const generateSlotsForDate = ({ schedule, date, bookedSlots = [] }) => {
   const safeBookedSlots = Array.isArray(bookedSlots) ? bookedSlots : [];
   const booked = new Set(safeBookedSlots);
   return STATIC_SLOTS.filter((slot) => !booked.has(slot));
-
-  const normalized = normalizeSchedule(schedule);
-  const dayName = getDayName(date);
-
-  if (!normalized.workingDays.includes(dayName)) {
-    return [];
-  }
-
-  const startMinutes = parseMinutes(normalized.startTime);
-  const endMinutes = parseMinutes(normalized.endTime);
-
-  if (startMinutes === null || endMinutes === null || endMinutes <= startMinutes) {
-    return [];
-  }
-
-  const booked = new Set(bookedSlots);
-  const slots = [];
-
-  for (let cursor = startMinutes; cursor + normalized.slotDuration <= endMinutes; cursor += normalized.slotDuration) {
-    const slot = toAmPm(formatMinutes(cursor));
-    if (!booked.has(slot)) {
-      slots.push(slot);
-    }
-  }
-
-  return slots;
 };
