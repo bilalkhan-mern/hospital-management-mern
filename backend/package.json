@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed:admin": "node src/scripts/createAdmin.js",
     "seed:demo-admins": "node src/scripts/createDemoAdmins.js",
