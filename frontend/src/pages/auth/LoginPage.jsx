@@ -2,9 +2,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import DemoCredentialsCard from '../../components/auth/DemoCredentialsCard';
 
 const LoginPage = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,6 +53,14 @@ const LoginPage = () => {
               {submitting ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          <DemoCredentialsCard
+            onPick={({ email, password }) => {
+              setValue('email', email, { shouldDirty: true, shouldValidate: true });
+              setValue('password', password, { shouldDirty: true, shouldValidate: true });
+              setLoginError('');
+            }}
+          />
           <div className="mt-6 space-y-2 text-sm text-slate-500">
             <p>
               Patient account needed?{' '}
