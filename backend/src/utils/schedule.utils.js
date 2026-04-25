@@ -99,7 +99,8 @@ export const buildScheduleSummary = (schedule) => {
 
 export const generateSlotsForDate = ({ schedule, date, bookedSlots = [] }) => {
   // Simple-only build: fixed slots (no schedule math) for easy explanation.
-  const booked = new Set(bookedSlots);
+  const safeBookedSlots = Array.isArray(bookedSlots) ? bookedSlots : [];
+  const booked = new Set(safeBookedSlots);
   return STATIC_SLOTS.filter((slot) => !booked.has(slot));
 
   const normalized = normalizeSchedule(schedule);
