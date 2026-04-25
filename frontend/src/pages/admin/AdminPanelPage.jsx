@@ -14,6 +14,8 @@ import { printInvoiceDocument, printReportSummaryDocument } from '../../lib/prin
 import { defaultSchedule, weekDayOptions } from '../../lib/schedule';
 import { useAuth } from '../../context/AuthContext';
 
+const simpleMode = String(import.meta.env.VITE_SIMPLE_MODE || '').toLowerCase() === 'true';
+
 const AdminPanelPage = () => {
   const { user } = useAuth();
   const {
@@ -91,7 +93,7 @@ const AdminPanelPage = () => {
         api.get('/departments'),
         api.get('/reports?includeDeleted=true'),
         api.get('/admin/audit-logs?limit=40'),
-        api.get('/stats/admin'),
+        simpleMode ? Promise.resolve({ data: { data: { appointmentsPerDay: [], appointmentStatus: [] } } }) : api.get('/stats/admin'),
       ];
 
       if (isSuperAdmin) {
@@ -608,24 +610,26 @@ const AdminPanelPage = () => {
               </div>
             </div>
           </div>
-          <div className="grid gap-6 xl:grid-cols-2">
-            <ChartCard
-              title="Appointments Per Day"
-              description="Last 7 days of appointment volume across the hospital."
-              loading={statsLoading}
-              empty={!adminChartStats.appointmentsPerDay?.some((item) => item.count)}
-            >
-              <AppointmentsLineChart data={adminChartStats.appointmentsPerDay} />
-            </ChartCard>
-            <ChartCard
-              title="Appointment Status Split"
-              description="Current distribution of pending, completed, and cancelled appointments."
-              loading={statsLoading}
-              empty={!adminChartStats.appointmentStatus?.some((item) => item.value)}
-            >
-              <AppointmentStatusPieChart data={adminChartStats.appointmentStatus} />
-            </ChartCard>
-          </div>
+          {!simpleMode && (
+            <div className="grid gap-6 xl:grid-cols-2">
+              <ChartCard
+                title="Appointments Per Day"
+                description="Last 7 days of appointment volume across the hospital."
+                loading={statsLoading}
+                empty={!adminChartStats.appointmentsPerDay?.some((item) => item.count)}
+              >
+                <AppointmentsLineChart data={adminChartStats.appointmentsPerDay} />
+              </ChartCard>
+              <ChartCard
+                title="Appointment Status Split"
+                description="Current distribution of pending, completed, and cancelled appointments."
+                loading={statsLoading}
+                empty={!adminChartStats.appointmentStatus?.some((item) => item.value)}
+              >
+                <AppointmentStatusPieChart data={adminChartStats.appointmentStatus} />
+              </ChartCard>
+            </div>
+          )}
           </div>
         </div>
 

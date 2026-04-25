@@ -17,6 +17,8 @@ import { printPrescriptionDocument } from '../../lib/printPrescription';
 import { defaultSchedule, weekDayOptions } from '../../lib/schedule';
 import { reportTypeOptions } from '../../lib/reportTypes';
 
+const simpleMode = String(import.meta.env.VITE_SIMPLE_MODE || '').toLowerCase() === 'true';
+
 const statusBadgeMap = {
   pending: 'bg-amber-100 text-amber-700',
   completed: 'bg-emerald-100 text-emerald-700',
@@ -107,8 +109,12 @@ const DoctorPanelPage = () => {
       const doctorAppointments = Array.isArray(appointmentsResponse.data.data) ? appointmentsResponse.data.data : [];
       setAppointments(doctorAppointments);
       setDepartments(departmentsResponse.data.data);
-      const statsResponse = await api.get(`/stats/doctor/${profile._id}`);
-      setDoctorChartStats(statsResponse.data.data || { appointmentsPerDay: [] });
+      if (simpleMode) {
+        setDoctorChartStats({ appointmentsPerDay: [] });
+      } else {
+        const statsResponse = await api.get(`/stats/doctor/${profile._id}`);
+        setDoctorChartStats(statsResponse.data.data || { appointmentsPerDay: [] });
+      }
 
       resetProfile({
         name: profile.user?.name || '',
@@ -586,14 +592,16 @@ const DoctorPanelPage = () => {
 
           {activeTab === 'appointments' && (
           <div className="space-y-6">
-          <ChartCard
-            title="My Appointment Trend"
-            description="Last 7 days of appointment load for your schedule."
-            loading={chartLoading}
-            empty={!doctorChartStats.appointmentsPerDay?.some((item) => item.count)}
-          >
-            <AppointmentsBarChart data={doctorChartStats.appointmentsPerDay} />
-          </ChartCard>
+          {!simpleMode && (
+            <ChartCard
+              title="My Appointment Trend"
+              description="Last 7 days of appointment load for your schedule."
+              loading={chartLoading}
+              empty={!doctorChartStats.appointmentsPerDay?.some((item) => item.count)}
+            >
+              <AppointmentsBarChart data={doctorChartStats.appointmentsPerDay} />
+            </ChartCard>
+          )}
           <div className="card">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>

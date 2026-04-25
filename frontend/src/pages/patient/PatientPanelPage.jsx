@@ -16,6 +16,8 @@ import { printReportSummaryDocument } from '../../lib/printDocuments';
 import { printPrescriptionDocument } from '../../lib/printPrescription';
 import { reportTypeOptions } from '../../lib/reportTypes';
 
+const simpleMode = String(import.meta.env.VITE_SIMPLE_MODE || '').toLowerCase() === 'true';
+
 const statusBadgeMap = {
   pending: 'bg-amber-100 text-amber-700',
   completed: 'bg-emerald-100 text-emerald-700',
@@ -115,8 +117,12 @@ const PatientPanelPage = () => {
       if (profile._id) {
         const reportsResponse = await api.get(`/reports/patient/${profile._id}`);
         setReports(Array.isArray(reportsResponse.data.data) ? reportsResponse.data.data : []);
-        const statsResponse = await api.get(`/stats/patient/${profile._id}`);
-        setPatientChartStats(statsResponse.data.data || { visitHistory: [] });
+        if (simpleMode) {
+          setPatientChartStats({ visitHistory: [] });
+        } else {
+          const statsResponse = await api.get(`/stats/patient/${profile._id}`);
+          setPatientChartStats(statsResponse.data.data || { visitHistory: [] });
+        }
       } else {
         setReports([]);
         setPatientChartStats({ visitHistory: [] });
@@ -615,14 +621,16 @@ const PatientPanelPage = () => {
         {activeTab === 'appointments' && (
         <div className="xl:col-span-2">
           <div className="space-y-6">
-          <ChartCard
-            title="Visit History Trend"
-            description="Last 7 days of your appointment activity."
-            loading={chartLoading}
-            empty={!patientChartStats.visitHistory?.some((item) => item.count)}
-          >
-            <AppointmentsLineChart data={patientChartStats.visitHistory} />
-          </ChartCard>
+          {!simpleMode && (
+            <ChartCard
+              title="Visit History Trend"
+              description="Last 7 days of your appointment activity."
+              loading={chartLoading}
+              empty={!patientChartStats.visitHistory?.some((item) => item.count)}
+            >
+              <AppointmentsLineChart data={patientChartStats.visitHistory} />
+            </ChartCard>
+          )}
           <div className="card">
             <div>
               <h2 className="section-title">Appointment History</h2>
