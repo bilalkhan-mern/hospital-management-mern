@@ -66,7 +66,6 @@ export const AuthProvider = ({ children }) => {
     try {
       await api.post('/auth/logout');
     } catch (_error) {
-      // Ignore logout network issues and clear local session.
     } finally {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('user');

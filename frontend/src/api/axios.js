@@ -15,7 +15,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Fresher-friendly: keep auth simple. If token expires, user logs in again.
     return Promise.reject(error);
   }
 );

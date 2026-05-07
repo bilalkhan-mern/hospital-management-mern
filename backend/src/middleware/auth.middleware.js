@@ -2,7 +2,23 @@ import jwt from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
 import User from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
-import { normalizeAdminType } from '../utils/admin.utils.js';
+
+const normalizeAdminType = (user) => {
+  if (user?.role !== 'admin') {
+    return null;
+  }
+
+  if (user?.adminType) {
+    return user.adminType;
+  }
+
+  const defaultAdminEmail = (process.env.ADMIN_EMAIL || 'admin@hospital.com').toLowerCase();
+  if ((user.email || '').toLowerCase() === defaultAdminEmail) {
+    return 'super_admin';
+  }
+
+  return 'admin';
+};
 
 export const protect = async (req, _res, next) => {
   const authHeader = req.headers.authorization;

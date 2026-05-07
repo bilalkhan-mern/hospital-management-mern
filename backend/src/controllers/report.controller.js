@@ -5,14 +5,30 @@ import Patient from '../models/Patient.js';
 import Report from '../models/Report.js';
 import Prescription from '../models/Prescription.js';
 import { AppError } from '../utils/AppError.js';
-import {
-  getLocalReportPath,
-  getReportAccessUrl,
-  getReportFileType,
-  persistLocalReportFile,
-  uploadBufferToCloudinary,
-} from '../utils/report.utils.js';
-import fs from 'fs/promises';
+import cloudinary from '../config/cloudinary.js';
+
+const getReportFileType = (mimetype = '') => (mimetype === 'application/pdf' ? 'pdf' : 'image');
+
+const uploadBufferToCloudinary = (file, folder = 'hospital-reports') =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: 'image',
+        format: file.mimetype === 'application/pdf' ? 'pdf' : undefined,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve(result);
+      }
+    );
+
+    stream.end(file.buffer);
+  });
 
 const reportPopulate = [
   { path: 'patientId', populate: { path: 'user', select: 'name email phone' } },
@@ -154,7 +170,6 @@ export const uploadReport = async (req, res) => {
 
   const uploadResult = await uploadBufferToCloudinary(req.file);
   const fileType = getReportFileType(req.file.mimetype);
-  const localFileName = await persistLocalReportFile(req.file);
 
   const report = await Report.create({
     patientId: patient._id,
@@ -164,7 +179,6 @@ export const uploadReport = async (req, res) => {
     publicId: uploadResult.public_id,
     mimeType: req.file.mimetype,
     originalName: req.file.originalname,
-    localFileName,
     type,
     reportDate: normalizedReportDate,
     fileType,
@@ -241,24 +255,7 @@ export const streamReportFile = async (req, res) => {
   const report = await ensureUserCanAccessReport(req.params.id, req.user);
   const shouldDownload = req.query.download === 'true';
   const filename = `${sanitizeFilename(report.title)}.${report.fileType === 'pdf' ? 'pdf' : 'file'}`;
-  const localPath = getLocalReportPath(report.localFileName);
-
-  if (localPath) {
-    try {
-      const fileBuffer = await fs.readFile(localPath);
-      res.setHeader('Content-Type', report.mimeType || (report.fileType === 'pdf' ? 'application/pdf' : 'application/octet-stream'));
-      res.setHeader('Content-Length', Buffer.byteLength(fileBuffer));
-      res.setHeader('Content-Disposition', `${shouldDownload ? 'attachment' : 'inline'}; filename="${filename}"`);
-      res.send(fileBuffer);
-      return;
-    } catch (error) {
-      if (error.code !== 'ENOENT') {
-        throw error;
-      }
-    }
-  }
-
-  const sourceUrl = getReportAccessUrl(report, { download: shouldDownload });
+  const sourceUrl = report.fileUrl;
   if (!sourceUrl) {
     throw new AppError('Report file URL is unavailable.', StatusCodes.BAD_REQUEST);
   }

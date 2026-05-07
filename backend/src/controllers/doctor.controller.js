@@ -6,9 +6,137 @@ import Prescription from '../models/Prescription.js';
 import Department from '../models/Department.js';
 import Report from '../models/Report.js';
 import { AppError } from '../utils/AppError.js';
-import { buildScheduleSummary, isScheduleValid, normalizeSchedule } from '../utils/schedule.utils.js';
-import { applyReschedule, assertAppointmentCanBeRescheduled, getAvailableSlotsForDoctorDate } from '../utils/appointment.utils.js';
-import { normalizePrescriptionOutput } from '../utils/prescription.utils.js';
+
+const WEEK_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DEFAULT_SCHEDULE = {
+  workingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+  startTime: '09:00',
+  endTime: '17:00',
+  slotDuration: 30,
+};
+
+const STATIC_SLOTS = [
+  '09:00 AM',
+  '09:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '12:30 PM',
+  '02:00 PM',
+  '02:30 PM',
+  '03:00 PM',
+  '03:30 PM',
+  '04:00 PM',
+  '04:30 PM',
+];
+
+const timePattern = /^([01]\\d|2[0-3]):([0-5]\\d)$/;
+
+const normalizeSchedule = (schedule = {}) => {
+  const workingDays = Array.isArray(schedule.workingDays)
+    ? schedule.workingDays.map((item) => String(item).toLowerCase()).filter((item) => WEEK_DAYS.includes(item))
+    : DEFAULT_SCHEDULE.workingDays;
+
+  return {
+    workingDays: workingDays.length ? Array.from(new Set(workingDays)) : DEFAULT_SCHEDULE.workingDays,
+    startTime: schedule.startTime || DEFAULT_SCHEDULE.startTime,
+    endTime: schedule.endTime || DEFAULT_SCHEDULE.endTime,
+    slotDuration: Number(schedule.slotDuration) || DEFAULT_SCHEDULE.slotDuration,
+  };
+};
+
+const parseMinutes = (value) => {
+  if (!timePattern.test(value || '')) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  return (hours * 60) + minutes;
+};
+
+const isScheduleValid = (schedule) => {
+  const normalized = normalizeSchedule(schedule);
+  const startMinutes = parseMinutes(normalized.startTime);
+  const endMinutes = parseMinutes(normalized.endTime);
+  if (startMinutes === null || endMinutes === null) return false;
+  if (normalized.slotDuration < 5) return false;
+  return endMinutes > startMinutes;
+};
+
+const toAmPm = (value) => {
+  const minutes = parseMinutes(value);
+  if (minutes === null) return value;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  const twelveHour = hours % 12 || 12;
+  return `${String(twelveHour).padStart(2, '0')}:${String(remainder).padStart(2, '0')} ${meridiem}`;
+};
+
+const buildScheduleSummary = (schedule) => {
+  const normalized = normalizeSchedule(schedule);
+  const labels = normalized.workingDays.map((day) => day.slice(0, 3).toUpperCase());
+  return `${labels.join(', ')} | ${toAmPm(normalized.startTime)} - ${toAmPm(normalized.endTime)} | ${normalized.slotDuration} min`;
+};
+
+const normalizeMedicineItem = (medicine) => {
+  if (typeof medicine === 'string') {
+    return { name: medicine, dosage: '', frequency: '', days: 1, notes: '' };
+  }
+  return {
+    name: medicine?.name || '',
+    dosage: medicine?.dosage || '',
+    frequency: medicine?.frequency || '',
+    days: medicine?.days || 1,
+    notes: medicine?.notes || '',
+  };
+};
+
+const normalizePrescriptionOutput = (prescription) => ({
+  ...prescription.toObject(),
+  medicines: Array.isArray(prescription.medicines) ? prescription.medicines.map(normalizeMedicineItem) : [],
+  reports: Array.isArray(prescription.reports)
+    ? prescription.reports.map((report) => (report?.toObject ? report.toObject() : report))
+    : [],
+});
+
+const assertAppointmentCanBeRescheduled = (appointment) => {
+  if (appointment.status === 'completed') {
+    throw new AppError('Completed appointments cannot be rescheduled.', StatusCodes.BAD_REQUEST);
+  }
+  if (appointment.status === 'cancelled') {
+    throw new AppError('Cancelled appointments cannot be rescheduled.', StatusCodes.BAD_REQUEST);
+  }
+};
+
+const getAvailableSlotsForDoctorDate = async ({ doctor, appointmentDate, excludeAppointmentId = null }) => {
+  const bookedAppointments = await Appointment.find({
+    doctor: doctor._id,
+    date: appointmentDate,
+    status: { $ne: 'cancelled' },
+    ...(excludeAppointmentId ? { _id: { $ne: excludeAppointmentId } } : {}),
+  }).select('timeSlot');
+
+  const booked = new Set(bookedAppointments.map((item) => item.timeSlot));
+  return STATIC_SLOTS.filter((slot) => !booked.has(slot));
+};
+
+const applyReschedule = async ({ appointment, changedByRole, changedByUser, date, timeSlot, reason = '' }) => {
+  appointment.rescheduleHistory.push({
+    changedByRole,
+    changedByUser,
+    fromDate: appointment.date,
+    fromTimeSlot: appointment.timeSlot,
+    toDate: date,
+    toTimeSlot: timeSlot,
+    reason,
+  });
+
+  appointment.date = date;
+  appointment.timeSlot = timeSlot;
+  appointment.status = 'pending';
+  await appointment.save();
+  return appointment;
+};
 
 export const getDoctorProfile = async (req, res) => {
   const doctor = await Doctor.findOne({ user: req.user._id })
@@ -39,7 +167,7 @@ export const updateDoctorProfile = async (req, res) => {
     throw new AppError('Department not found.', StatusCodes.NOT_FOUND);
   }
 
-  // Simple-only build: schedule validation is relaxed (slots are static).
+
 
   doctor.user.name = req.body.name;
   doctor.user.phone = req.body.phone;

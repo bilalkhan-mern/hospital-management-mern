@@ -6,8 +6,80 @@ import Patient from '../models/Patient.js';
 import Appointment from '../models/Appointment.js';
 import Department from '../models/Department.js';
 import { AppError } from '../utils/AppError.js';
-import { buildScheduleSummary, isScheduleValid, normalizeSchedule } from '../utils/schedule.utils.js';
-import { normalizeAdminType } from '../utils/admin.utils.js';
+
+const normalizeAdminType = (user) => {
+  if (user?.role !== 'admin') {
+    return null;
+  }
+
+  if (user?.adminType) {
+    return user.adminType;
+  }
+
+  const defaultAdminEmail = (process.env.ADMIN_EMAIL || 'admin@hospital.com').toLowerCase();
+  if ((user.email || '').toLowerCase() === defaultAdminEmail) {
+    return 'super_admin';
+  }
+
+  return 'admin';
+};
+
+const WEEK_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DEFAULT_SCHEDULE = {
+  workingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+  startTime: '09:00',
+  endTime: '17:00',
+  slotDuration: 30,
+};
+
+const timePattern = /^([01]\\d|2[0-3]):([0-5]\\d)$/;
+
+const normalizeSchedule = (schedule = {}) => {
+  const workingDays = Array.isArray(schedule.workingDays)
+    ? schedule.workingDays.map((item) => String(item).toLowerCase()).filter((item) => WEEK_DAYS.includes(item))
+    : DEFAULT_SCHEDULE.workingDays;
+
+  return {
+    workingDays: workingDays.length ? Array.from(new Set(workingDays)) : DEFAULT_SCHEDULE.workingDays,
+    startTime: schedule.startTime || DEFAULT_SCHEDULE.startTime,
+    endTime: schedule.endTime || DEFAULT_SCHEDULE.endTime,
+    slotDuration: Number(schedule.slotDuration) || DEFAULT_SCHEDULE.slotDuration,
+  };
+};
+
+const parseMinutes = (value) => {
+  if (!timePattern.test(value || '')) {
+    return null;
+  }
+
+  const [hours, minutes] = value.split(':').map(Number);
+  return (hours * 60) + minutes;
+};
+
+const isScheduleValid = (schedule) => {
+  const normalized = normalizeSchedule(schedule);
+  const startMinutes = parseMinutes(normalized.startTime);
+  const endMinutes = parseMinutes(normalized.endTime);
+  if (startMinutes === null || endMinutes === null) return false;
+  if (normalized.slotDuration < 5) return false;
+  return endMinutes > startMinutes;
+};
+
+const toAmPm = (value) => {
+  const minutes = parseMinutes(value);
+  if (minutes === null) return value;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  const twelveHour = hours % 12 || 12;
+  return `${String(twelveHour).padStart(2, '0')}:${String(remainder).padStart(2, '0')} ${meridiem}`;
+};
+
+const buildScheduleSummary = (schedule) => {
+  const normalized = normalizeSchedule(schedule);
+  const labels = normalized.workingDays.map((day) => day.slice(0, 3).toUpperCase());
+  return `${labels.join(', ')} | ${toAmPm(normalized.startTime)} - ${toAmPm(normalized.endTime)} | ${normalized.slotDuration} min`;
+};
 
 export const getAdminDashboard = async (_req, res) => {
   const [patients, doctors, appointments, departments, pendingDoctors, paidAppointments, unpaidAppointments] = await Promise.all([
@@ -60,8 +132,6 @@ export const createDoctor = async (req, res) => {
     throw new AppError('Department not found.', StatusCodes.NOT_FOUND);
   }
 
-  // Simple-only build: schedule validation is relaxed (slots are static).
-
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await User.create({
     name,
@@ -91,8 +161,6 @@ export const updateDoctor = async (req, res) => {
   if (!doctor) {
     throw new AppError('Doctor not found.', StatusCodes.NOT_FOUND);
   }
-
-  // Simple-only build: schedule validation is relaxed (slots are static).
 
   const departmentExists = await Department.findById(req.body.department);
   if (!departmentExists) {
@@ -232,7 +300,6 @@ export const getAdmins = async (_req, res) => {
 };
 
 export const getAuditLogs = async (req, res) => {
-  // Fresher-friendly build: audit logs are not part of the core workflow.
   res.json({ success: true, data: [] });
 };
 

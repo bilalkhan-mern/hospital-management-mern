@@ -6,8 +6,44 @@ import Doctor from '../models/Doctor.js';
 import Department from '../models/Department.js';
 import { AppError } from '../utils/AppError.js';
 import { generateAccessToken } from '../utils/token.utils.js';
-import { normalizeSchedule } from '../utils/schedule.utils.js';
-import { normalizeAdminType } from '../utils/admin.utils.js';
+
+const normalizeAdminType = (user) => {
+  if (user?.role !== 'admin') {
+    return null;
+  }
+
+  if (user?.adminType) {
+    return user.adminType;
+  }
+
+  const defaultAdminEmail = (process.env.ADMIN_EMAIL || 'admin@hospital.com').toLowerCase();
+  if ((user.email || '').toLowerCase() === defaultAdminEmail) {
+    return 'super_admin';
+  }
+
+  return 'admin';
+};
+
+const WEEK_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+const DEFAULT_SCHEDULE = {
+  workingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+  startTime: '09:00',
+  endTime: '17:00',
+  slotDuration: 30,
+};
+
+const normalizeSchedule = (schedule = {}) => {
+  const workingDays = Array.isArray(schedule.workingDays)
+    ? schedule.workingDays.map((item) => String(item).toLowerCase()).filter((item) => WEEK_DAYS.includes(item))
+    : DEFAULT_SCHEDULE.workingDays;
+
+  return {
+    workingDays: workingDays.length ? Array.from(new Set(workingDays)) : DEFAULT_SCHEDULE.workingDays,
+    startTime: schedule.startTime || DEFAULT_SCHEDULE.startTime,
+    endTime: schedule.endTime || DEFAULT_SCHEDULE.endTime,
+    slotDuration: Number(schedule.slotDuration) || DEFAULT_SCHEDULE.slotDuration,
+  };
+};
 
 const buildAuthPayload = async (user) => {
   const baseUser = {

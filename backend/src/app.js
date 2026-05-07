@@ -28,7 +28,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow server-to-server calls (no Origin) and known frontend hosts.
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
       if (origin.endsWith('.netlify.app')) return callback(null, true);

@@ -5,9 +5,92 @@ import Appointment from '../models/Appointment.js';
 import Prescription from '../models/Prescription.js';
 import { AppError } from '../utils/AppError.js';
 import { mockSendEmail } from '../services/email.service.js';
-import { buildScheduleSummary } from '../utils/schedule.utils.js';
-import { applyReschedule, assertAppointmentCanBeRescheduled, getAvailableSlotsForDoctorDate } from '../utils/appointment.utils.js';
-import { normalizePrescriptionOutput } from '../utils/prescription.utils.js';
+
+const STATIC_SLOTS = [
+  '09:00 AM',
+  '09:30 AM',
+  '10:00 AM',
+  '10:30 AM',
+  '11:00 AM',
+  '11:30 AM',
+  '12:00 PM',
+  '12:30 PM',
+  '02:00 PM',
+  '02:30 PM',
+  '03:00 PM',
+  '03:30 PM',
+  '04:00 PM',
+  '04:30 PM',
+];
+
+const buildScheduleSummary = (schedule) => {
+  const workingDays = Array.isArray(schedule?.workingDays) ? schedule.workingDays : [];
+  const labels = workingDays.map((day) => String(day).slice(0, 3).toUpperCase());
+  const startTime = schedule?.startTime || '';
+  const endTime = schedule?.endTime || '';
+  const slotDuration = schedule?.slotDuration || 0;
+  return `${labels.join(', ')} | ${startTime} - ${endTime} | ${slotDuration} min`;
+};
+
+const normalizeMedicineItem = (medicine) => {
+  if (typeof medicine === 'string') {
+    return { name: medicine, dosage: '', frequency: '', days: 1, notes: '' };
+  }
+  return {
+    name: medicine?.name || '',
+    dosage: medicine?.dosage || '',
+    frequency: medicine?.frequency || '',
+    days: medicine?.days || 1,
+    notes: medicine?.notes || '',
+  };
+};
+
+const normalizePrescriptionOutput = (prescription) => ({
+  ...prescription.toObject(),
+  medicines: Array.isArray(prescription.medicines) ? prescription.medicines.map(normalizeMedicineItem) : [],
+  reports: Array.isArray(prescription.reports)
+    ? prescription.reports.map((report) => (report?.toObject ? report.toObject() : report))
+    : [],
+});
+
+const assertAppointmentCanBeRescheduled = (appointment) => {
+  if (appointment.status === 'completed') {
+    throw new AppError('Completed appointments cannot be rescheduled.', StatusCodes.BAD_REQUEST);
+  }
+  if (appointment.status === 'cancelled') {
+    throw new AppError('Cancelled appointments cannot be rescheduled.', StatusCodes.BAD_REQUEST);
+  }
+};
+
+const getAvailableSlotsForDoctorDate = async ({ doctor, appointmentDate, excludeAppointmentId = null }) => {
+  const bookedAppointments = await Appointment.find({
+    doctor: doctor._id,
+    date: appointmentDate,
+    status: { $ne: 'cancelled' },
+    ...(excludeAppointmentId ? { _id: { $ne: excludeAppointmentId } } : {}),
+  }).select('timeSlot');
+
+  const booked = new Set(bookedAppointments.map((item) => item.timeSlot));
+  return STATIC_SLOTS.filter((slot) => !booked.has(slot));
+};
+
+const applyReschedule = async ({ appointment, changedByRole, changedByUser, date, timeSlot, reason = '' }) => {
+  appointment.rescheduleHistory.push({
+    changedByRole,
+    changedByUser,
+    fromDate: appointment.date,
+    fromTimeSlot: appointment.timeSlot,
+    toDate: date,
+    toTimeSlot: timeSlot,
+    reason,
+  });
+
+  appointment.date = date;
+  appointment.timeSlot = timeSlot;
+  appointment.status = 'pending';
+  await appointment.save();
+  return appointment;
+};
 
 export const getPatientProfile = async (req, res) => {
   const patient = await Patient.findOne({ user: req.user._id }).populate('user', 'name email phone role');

@@ -1,5 +1,45 @@
 import mongoose from 'mongoose';
-import { DEFAULT_SCHEDULE, buildScheduleSummary } from '../utils/schedule.utils.js';
+
+const DEFAULT_SCHEDULE = {
+  workingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'],
+  startTime: '09:00',
+  endTime: '17:00',
+  slotDuration: 30,
+};
+
+const timePattern = /^([01]\\d|2[0-3]):([0-5]\\d)$/;
+
+const parseMinutes = (value) => {
+  if (!timePattern.test(value || '')) {
+    return null;
+  }
+
+  const [hours, minutes] = value.split(':').map(Number);
+  return (hours * 60) + minutes;
+};
+
+const toAmPm = (value) => {
+  const minutes = parseMinutes(value);
+  if (minutes === null) {
+    return value;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  const meridiem = hours >= 12 ? 'PM' : 'AM';
+  const twelveHour = hours % 12 || 12;
+
+  return `${String(twelveHour).padStart(2, '0')}:${String(remainder).padStart(2, '0')} ${meridiem}`;
+};
+
+const buildScheduleSummary = (schedule) => {
+  const workingDays = Array.isArray(schedule?.workingDays) ? schedule.workingDays : DEFAULT_SCHEDULE.workingDays;
+  const labels = workingDays.map((day) => String(day).slice(0, 3).toUpperCase());
+  const startTime = schedule?.startTime || DEFAULT_SCHEDULE.startTime;
+  const endTime = schedule?.endTime || DEFAULT_SCHEDULE.endTime;
+  const slotDuration = schedule?.slotDuration || DEFAULT_SCHEDULE.slotDuration;
+  return `${labels.join(', ')} | ${toAmPm(startTime)} - ${toAmPm(endTime)} | ${slotDuration} min`;
+};
 
 const doctorScheduleSchema = new mongoose.Schema(
   {
