@@ -5,8 +5,6 @@ import DashboardLayout from '../../components/layout/DashboardLayout';
 import Loader from '../../components/common/Loader';
 import StatCard from '../../components/common/StatCard';
 import EmptyState from '../../components/common/EmptyState';
-import ChartCard from '../../components/charts/ChartCard';
-import { AppointmentStatusPieChart, AppointmentsLineChart } from '../../components/charts/DashboardCharts';
 import ReportCard from '../../components/reports/ReportCard';
 import ReportPreviewModal from '../../components/reports/ReportPreviewModal';
 import api from '../../api/axios';
@@ -51,8 +49,6 @@ const AdminPanelPage = () => {
   const [admins, setAdmins] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [reports, setReports] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [adminChartStats, setAdminChartStats] = useState({ appointmentsPerDay: [], appointmentStatus: [] });
   const [statsLoading, setStatsLoading] = useState(true);
   const [panelError, setPanelError] = useState('');
   const [doctorFormError, setDoctorFormError] = useState('');
@@ -61,7 +57,6 @@ const AdminPanelPage = () => {
   const [adminFormError, setAdminFormError] = useState('');
   const [adminActionError, setAdminActionError] = useState('');
   const [reportsError, setReportsError] = useState('');
-  const [auditError, setAuditError] = useState('');
   const [paymentModal, setPaymentModal] = useState({ open: false, appointment: null });
   const [paymentMethod, setPaymentMethod] = useState('upi');
   const [previewReport, setPreviewReport] = useState(null);
@@ -74,9 +69,6 @@ const AdminPanelPage = () => {
   const [reportSearch, setReportSearch] = useState('');
   const [reportTypeFilter, setReportTypeFilter] = useState('all');
   const [reportUploaderFilter, setReportUploaderFilter] = useState('all');
-  const [auditSearch, setAuditSearch] = useState('');
-  const [auditActionFilter, setAuditActionFilter] = useState('all');
-  const [auditDateFilter, setAuditDateFilter] = useState('');
   const doctorFormRef = useRef(null);
   const isSuperAdmin = user?.adminType === 'super_admin';
 
@@ -92,8 +84,6 @@ const AdminPanelPage = () => {
         api.get('/admin/appointments'),
         api.get('/departments'),
         api.get('/reports?includeDeleted=true'),
-        api.get('/admin/audit-logs?limit=40'),
-        simpleMode ? Promise.resolve({ data: { data: { appointmentsPerDay: [], appointmentStatus: [] } } }) : api.get('/stats/admin'),
       ];
 
       if (isSuperAdmin) {
@@ -108,8 +98,6 @@ const AdminPanelPage = () => {
         appointmentsResponse,
         departmentsResponse,
         reportsResponse,
-        auditLogsResponse,
-        statsResponse,
         adminsResponse,
       ] = await Promise.all(requests);
 
@@ -120,8 +108,6 @@ const AdminPanelPage = () => {
       setAppointments(appointmentsResponse.data.data);
       setDepartments(departmentsResponse.data.data);
       setReports(reportsResponse.data.data);
-      setAuditLogs(auditLogsResponse.data.data || []);
-      setAdminChartStats(statsResponse.data.data || { appointmentsPerDay: [], appointmentStatus: [] });
       setAdmins(adminsResponse?.data?.data || []);
     } catch (error) {
       setPanelError(error.response?.data?.message || 'Unable to load admin panel data.');
@@ -273,7 +259,6 @@ const AdminPanelPage = () => {
     { id: 'appointments', label: 'Appointments', helper: 'Visits, billing, and payments', count: stats.appointments },
     { id: 'reports', label: 'Reports', helper: 'Patient and doctor file records', count: stats.reports },
     { id: 'archived-reports', label: 'Archived Reports', helper: 'Restore hidden file records', count: stats.archivedReports },
-    { id: 'audit', label: 'Audit Logs', helper: 'Critical system activity trail', count: auditLogs.length },
     ...(isSuperAdmin ? [{ id: 'admins', label: 'Admin Control', helper: 'Secure admin management', count: admins.length }] : []),
   ];
 
@@ -424,24 +409,11 @@ const AdminPanelPage = () => {
     });
   }, [visibleReports, reportSearch, reportTypeFilter, reportUploaderFilter]);
 
-  const filteredAuditLogs = useMemo(() => {
-    return auditLogs.filter((log) => {
-      const query = auditSearch.trim().toLowerCase();
-      const matchesSearch = !query || `${log.message || ''} ${log.actor?.name || ''} ${log.actor?.email || ''} ${log.action || ''}`
-        .toLowerCase()
-        .includes(query);
-      const matchesAction = auditActionFilter === 'all' || log.action === auditActionFilter;
-      const matchesDate = !auditDateFilter || new Date(log.createdAt).toISOString().slice(0, 10) === auditDateFilter;
-      return matchesSearch && matchesAction && matchesDate;
-    });
-  }, [auditActionFilter, auditDateFilter, auditLogs, auditSearch]);
-
   const adminNotifications = useMemo(() => ([
     stats.pendingDoctors ? { label: `${stats.pendingDoctors} doctor approval request(s) waiting`, tone: 'warning' } : null,
     stats.unpaidAppointments ? { label: `${stats.unpaidAppointments} unpaid appointment(s) need billing follow-up`, tone: 'accent' } : null,
     stats.archivedReports ? { label: `${stats.archivedReports} archived report(s) available to restore`, tone: 'dark' } : null,
-    auditLogs[0] ? { label: `Latest activity: ${auditLogs[0].message}`, tone: 'neutral' } : null,
-  ].filter(Boolean)), [auditLogs, stats.archivedReports, stats.pendingDoctors, stats.unpaidAppointments]);
+  ].filter(Boolean)), [stats.archivedReports, stats.pendingDoctors, stats.unpaidAppointments]);
 
   if (loading) {
     return <Loader fullScreen />;
@@ -610,26 +582,6 @@ const AdminPanelPage = () => {
               </div>
             </div>
           </div>
-          {!simpleMode && (
-            <div className="grid gap-6 xl:grid-cols-2">
-              <ChartCard
-                title="Appointments Per Day"
-                description="Last 7 days of appointment volume across the hospital."
-                loading={statsLoading}
-                empty={!adminChartStats.appointmentsPerDay?.some((item) => item.count)}
-              >
-                <AppointmentsLineChart data={adminChartStats.appointmentsPerDay} />
-              </ChartCard>
-              <ChartCard
-                title="Appointment Status Split"
-                description="Current distribution of pending, completed, and cancelled appointments."
-                loading={statsLoading}
-                empty={!adminChartStats.appointmentStatus?.some((item) => item.value)}
-              >
-                <AppointmentStatusPieChart data={adminChartStats.appointmentStatus} />
-              </ChartCard>
-            </div>
-          )}
           </div>
         </div>
 
@@ -1171,70 +1123,6 @@ const AdminPanelPage = () => {
         </div>
       </section>
       )}
-
-      {activeTab === 'audit' && (
-      <section className="grid gap-6">
-        <div className="card">
-          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h2 className="section-title">Audit Activity Stream</h2>
-              <p className="section-copy">A readable trail of sensitive business actions with action categories, actor search, and date filtering.</p>
-            </div>
-            <span className="data-chip">{filteredAuditLogs.length} visible entries</span>
-          </div>
-          <div className="mt-5 grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px_220px]">
-            <input className="input" placeholder="Search actor, message, or action" value={auditSearch} onChange={(event) => setAuditSearch(event.target.value)} />
-            <select className="input" value={auditActionFilter} onChange={(event) => setAuditActionFilter(event.target.value)}>
-              <option value="all">All Actions</option>
-              {[...new Set(auditLogs.map((item) => item.action))].map((action) => (
-                <option key={action} value={action}>{action}</option>
-              ))}
-            </select>
-            <input type="date" className="input" value={auditDateFilter} onChange={(event) => setAuditDateFilter(event.target.value)} />
-          </div>
-          {auditError && <p className="error-banner mt-4">{auditError}</p>}
-          {!filteredAuditLogs.length ? (
-            <div className="mt-5">
-              <EmptyState title="No audit activity yet" description="Important system events will appear here as the team uses the hospital workflow." />
-            </div>
-          ) : (
-            <div className="mt-5 max-h-[760px] space-y-3 overflow-y-auto pr-1">
-              {filteredAuditLogs.map((log) => (
-                <article key={log._id} className={`record-shell ${log.action.includes('report') ? 'audit-report' : log.action.includes('appointment') ? 'audit-appointment' : log.action.includes('admin') ? 'audit-admin' : 'audit-doctor'}`}>
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-brand-500">{log.action}</p>
-                      <h3 className="mt-2 text-lg font-semibold text-slate-900">{log.message}</h3>
-                      <p className="mt-2 text-sm text-slate-500">
-                        {log.actor?.name || 'System user'} ({log.actorRole}) · {new Date(log.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="data-chip">{log.entityType}</span>
-                      <span className="data-chip">{log.action.split('.')[0]}</span>
-                    </div>
-                  </div>
-                  <div className="record-grid">
-                    <div className="record-meta">
-                      <p className="record-label">Actor Email</p>
-                      <p className="record-value">{log.actor?.email || 'Not available'}</p>
-                    </div>
-                    <div className="record-meta">
-                      <p className="record-label">Entity</p>
-                      <p className="record-value">{log.entityType}</p>
-                      <p className="record-subvalue">{log.entityId}</p>
-                    </div>
-                    <div className="record-meta sm:col-span-2 xl:col-span-3">
-                      <p className="record-label">Metadata</p>
-                      <p className="record-value text-xs font-medium leading-6 text-slate-600">
-                        {Object.keys(log.metadata || {}).length ? JSON.stringify(log.metadata) : 'No extra metadata recorded.'}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
         </div>
       </section>
       )}

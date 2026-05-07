@@ -32,7 +32,6 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user', JSON.stringify(response.data.data));
       } catch (_error) {
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         setUser(null);
       } finally {
@@ -45,9 +44,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (payload) => {
     const response = await api.post('/auth/login', payload);
-    const { accessToken, refreshToken, user: currentUser } = response.data.data;
+    const { accessToken, user: currentUser } = response.data.data;
     localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(currentUser));
     setUser(currentUser);
     toast.success('Welcome back.');
@@ -71,7 +69,6 @@ export const AuthProvider = ({ children }) => {
       // Ignore logout network issues and clear local session.
     } finally {
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       setUser(null);
       toast.success('You have been logged out.');

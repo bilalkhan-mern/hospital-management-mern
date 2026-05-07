@@ -3,7 +3,6 @@ import Doctor from '../models/Doctor.js';
 import Patient from '../models/Patient.js';
 import Appointment from '../models/Appointment.js';
 import Prescription from '../models/Prescription.js';
-import { createAuditLog } from '../utils/audit.utils.js';
 import { AppError } from '../utils/AppError.js';
 import { mockSendEmail } from '../services/email.service.js';
 import { buildScheduleSummary } from '../utils/schedule.utils.js';
@@ -39,21 +38,7 @@ export const updatePatientProfile = async (req, res) => {
   });
 
   await patient.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'patient.profile.updated',
-    entityType: 'patient',
-    entityId: patient._id,
-    message: 'Patient updated profile details.',
-    metadata: {
-      age: patient.age || null,
-      gender: patient.gender || null,
-    },
-  });
-
-  res.json({ success: true, message: 'Patient profile updated successfully.', data: patient });
+res.json({ success: true, message: 'Patient profile updated successfully.', data: patient });
 };
 
 export const getPublicDoctors = async (req, res) => {
@@ -177,24 +162,7 @@ export const bookAppointment = async (req, res) => {
     amount: doctor.consultationFee || 0,
     paymentStatus: 'unpaid',
   });
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.booked',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: `Patient booked an appointment with Dr. ${doctor.user?.name || 'doctor'}.`,
-    metadata: {
-      doctorId: doctor._id,
-      patientId: patient._id,
-      date: appointment.date,
-      timeSlot: appointment.timeSlot,
-      amount: appointment.amount,
-    },
-  });
-
-  await mockSendEmail({
+await mockSendEmail({
     to: patient.user.email,
     subject: 'Appointment Confirmation',
     message: `Your appointment with Dr. ${doctor.user.name} is booked for ${req.body.timeSlot}.`,
@@ -234,22 +202,7 @@ export const updatePatientAppointmentPayment = async (req, res) => {
   appointment.paymentMethod = req.body.paymentStatus === 'paid' ? req.body.paymentMethod : '';
   appointment.paidAt = req.body.paymentStatus === 'paid' ? new Date() : undefined;
   await appointment.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.payment.updated',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: `Patient marked appointment payment as ${appointment.paymentStatus}.`,
-    metadata: {
-      paymentStatus: appointment.paymentStatus,
-      paymentMethod: appointment.paymentMethod || null,
-      amount: appointment.amount,
-    },
-  });
-
-  res.json({ success: true, message: 'Payment updated successfully.', data: appointment });
+res.json({ success: true, message: 'Payment updated successfully.', data: appointment });
 };
 
 export const cancelPatientAppointment = async (req, res) => {
@@ -266,20 +219,7 @@ export const cancelPatientAppointment = async (req, res) => {
 
   appointment.status = 'cancelled';
   await appointment.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.cancelled',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: 'Patient cancelled an appointment.',
-    metadata: {
-      previousStatus: 'pending',
-    },
-  });
-
-  res.json({ success: true, message: 'Appointment cancelled successfully.', data: appointment });
+res.json({ success: true, message: 'Appointment cancelled successfully.', data: appointment });
 };
 
 export const reschedulePatientAppointment = async (req, res) => {
@@ -317,24 +257,7 @@ export const reschedulePatientAppointment = async (req, res) => {
     timeSlot: req.body.timeSlot,
     reason: req.body.reason,
   });
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.rescheduled',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: 'Patient rescheduled an appointment.',
-    metadata: {
-      oldDate: previousDate,
-      oldTimeSlot: previousTimeSlot,
-      newDate: updated.date,
-      newTimeSlot: updated.timeSlot,
-      reason: req.body.reason || '',
-    },
-  });
-
-  res.json({ success: true, message: 'Appointment rescheduled successfully.', data: updated });
+res.json({ success: true, message: 'Appointment rescheduled successfully.', data: updated });
 };
 
 export const getPatientPrescriptions = async (req, res) => {

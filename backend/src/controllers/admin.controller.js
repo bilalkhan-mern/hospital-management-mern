@@ -5,9 +5,7 @@ import Doctor from '../models/Doctor.js';
 import Patient from '../models/Patient.js';
 import Appointment from '../models/Appointment.js';
 import Department from '../models/Department.js';
-import AuditLog from '../models/AuditLog.js';
 import { AppError } from '../utils/AppError.js';
-import { createAuditLog } from '../utils/audit.utils.js';
 import { buildScheduleSummary, isScheduleValid, normalizeSchedule } from '../utils/schedule.utils.js';
 import { normalizeAdminType } from '../utils/admin.utils.js';
 
@@ -85,23 +83,7 @@ export const createDoctor = async (req, res) => {
     image: req.file ? `/uploads/${req.file.filename}` : undefined,
     isApproved: true,
   });
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'doctor.created',
-    entityType: 'doctor',
-    entityId: doctor._id,
-    message: `Admin created doctor profile for ${name}.`,
-    metadata: {
-      doctorUserId: user._id,
-      department,
-      specialization,
-      consultationFee,
-    },
-  });
-
-  res.status(StatusCodes.CREATED).json({ success: true, data: doctor, message: 'Doctor created successfully.' });
+res.status(StatusCodes.CREATED).json({ success: true, data: doctor, message: 'Doctor created successfully.' });
 };
 
 export const updateDoctor = async (req, res) => {
@@ -144,22 +126,7 @@ export const updateDoctor = async (req, res) => {
   });
 
   await doctor.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'doctor.updated',
-    entityType: 'doctor',
-    entityId: doctor._id,
-    message: `Admin updated doctor profile for ${doctor.user.name}.`,
-    metadata: {
-      department,
-      specialization,
-      consultationFee,
-    },
-  });
-
-  res.json({ success: true, message: 'Doctor updated successfully.', data: doctor });
+res.json({ success: true, message: 'Doctor updated successfully.', data: doctor });
 };
 
 export const deleteDoctor = async (req, res) => {
@@ -171,20 +138,7 @@ export const deleteDoctor = async (req, res) => {
   await Appointment.deleteMany({ doctor: doctor._id });
   await Doctor.findByIdAndDelete(req.params.id);
   await User.findByIdAndDelete(doctor.user);
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'doctor.deleted',
-    entityType: 'doctor',
-    entityId: doctor._id,
-    message: 'Admin deleted a doctor profile and related appointments.',
-    metadata: {
-      doctorUserId: doctor.user,
-    },
-  });
-
-  res.json({ success: true, message: 'Doctor deleted successfully.' });
+res.json({ success: true, message: 'Doctor deleted successfully.' });
 };
 
 export const getDoctors = async (_req, res) => {
@@ -225,20 +179,7 @@ export const approveDoctor = async (req, res) => {
 
   doctor.isApproved = true;
   await doctor.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'doctor.approved',
-    entityType: 'doctor',
-    entityId: doctor._id,
-    message: `Admin approved doctor ${doctor.user?.name || 'doctor'}.`,
-    metadata: {
-      doctorUserId: doctor.user?._id || doctor.user,
-    },
-  });
-
-  res.json({ success: true, message: 'Doctor approved successfully.', data: doctor });
+res.json({ success: true, message: 'Doctor approved successfully.', data: doctor });
 };
 
 export const rejectDoctor = async (req, res) => {
@@ -249,20 +190,7 @@ export const rejectDoctor = async (req, res) => {
 
   await Doctor.findByIdAndDelete(req.params.id);
   await User.findByIdAndDelete(doctor.user);
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'doctor.rejected',
-    entityType: 'doctor',
-    entityId: doctor._id,
-    message: 'Admin rejected and removed a doctor registration request.',
-    metadata: {
-      doctorUserId: doctor.user,
-    },
-  });
-
-  res.json({ success: true, message: 'Doctor registration rejected and removed.' });
+res.json({ success: true, message: 'Doctor registration rejected and removed.' });
 };
 
 export const getPatients = async (_req, res) => {
@@ -304,13 +232,8 @@ export const getAdmins = async (_req, res) => {
 };
 
 export const getAuditLogs = async (req, res) => {
-  const limit = Math.min(Number(req.query.limit) || 30, 100);
-  const logs = await AuditLog.find()
-    .populate('actor', 'name email role')
-    .sort({ createdAt: -1 })
-    .limit(limit);
-
-  res.json({ success: true, data: logs });
+  // Fresher-friendly build: audit logs are not part of the core workflow.
+  res.json({ success: true, data: [] });
 };
 
 export const createAdminUser = async (req, res) => {
@@ -331,21 +254,7 @@ export const createAdminUser = async (req, res) => {
     adminType,
     isActive: true,
   });
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'admin.created',
-    entityType: 'user',
-    entityId: admin._id,
-    message: `Super admin created a new ${adminType === 'super_admin' ? 'super admin' : 'admin'} account for ${name}.`,
-    metadata: {
-      adminType,
-      email,
-    },
-  });
-
-  res.status(StatusCodes.CREATED).json({
+res.status(StatusCodes.CREATED).json({
     success: true,
     message: 'Admin created successfully.',
     data: {
@@ -380,20 +289,7 @@ export const deactivateAdminUser = async (req, res) => {
 
   targetAdmin.isActive = false;
   await targetAdmin.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'admin.deactivated',
-    entityType: 'user',
-    entityId: targetAdmin._id,
-    message: `Super admin deactivated ${targetAdmin.name}.`,
-    metadata: {
-      adminType: normalizeAdminType(targetAdmin),
-    },
-  });
-
-  res.json({ success: true, message: 'Admin deactivated successfully.' });
+res.json({ success: true, message: 'Admin deactivated successfully.' });
 };
 
 export const activateAdminUser = async (req, res) => {
@@ -405,20 +301,7 @@ export const activateAdminUser = async (req, res) => {
 
   targetAdmin.isActive = true;
   await targetAdmin.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'admin.activated',
-    entityType: 'user',
-    entityId: targetAdmin._id,
-    message: `Super admin activated ${targetAdmin.name}.`,
-    metadata: {
-      adminType: normalizeAdminType(targetAdmin),
-    },
-  });
-
-  res.json({ success: true, message: 'Admin activated successfully.' });
+res.json({ success: true, message: 'Admin activated successfully.' });
 };
 
 export const deleteAdminUser = async (req, res) => {
@@ -440,20 +323,7 @@ export const deleteAdminUser = async (req, res) => {
   }
 
   await User.findByIdAndDelete(targetAdmin._id);
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'admin.deleted',
-    entityType: 'user',
-    entityId: targetAdmin._id,
-    message: `Super admin removed ${targetAdmin.name} from the system.`,
-    metadata: {
-      adminType: normalizeAdminType(targetAdmin),
-    },
-  });
-
-  res.json({ success: true, message: 'Admin removed successfully.' });
+res.json({ success: true, message: 'Admin removed successfully.' });
 };
 
 export const updateAppointmentPayment = async (req, res) => {
@@ -467,20 +337,5 @@ export const updateAppointmentPayment = async (req, res) => {
   appointment.paymentMethod = req.body.paymentStatus === 'paid' ? req.body.paymentMethod : '';
   appointment.paidAt = req.body.paymentStatus === 'paid' ? new Date() : undefined;
   await appointment.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.payment.updated',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: `Admin marked appointment payment as ${req.body.paymentStatus}.`,
-    metadata: {
-      paymentStatus: appointment.paymentStatus,
-      paymentMethod: appointment.paymentMethod || null,
-      amount: appointment.amount,
-    },
-  });
-
-  res.json({ success: true, message: 'Appointment payment updated successfully.', data: appointment });
+res.json({ success: true, message: 'Appointment payment updated successfully.', data: appointment });
 };

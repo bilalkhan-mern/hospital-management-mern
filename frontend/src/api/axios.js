@@ -15,27 +15,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // Simple-only build: no refresh-token retry; user re-logs in if token expires.
-    const originalRequest = error.config;
-    const refreshToken = localStorage.getItem('refreshToken');
-
-    if (error.response?.status === 401 && refreshToken && !originalRequest._retry) {
-      originalRequest._retry = true;
-
-      try {
-        const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/auth/refresh`, { refreshToken });
-        const newAccessToken = response.data.data.accessToken;
-        localStorage.setItem('accessToken', newAccessToken);
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
-      } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        return Promise.reject(refreshError);
-      }
-    }
-
+    // Fresher-friendly: keep auth simple. If token expires, user logs in again.
     return Promise.reject(error);
   }
 );

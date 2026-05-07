@@ -5,7 +5,6 @@ import Appointment from '../models/Appointment.js';
 import Prescription from '../models/Prescription.js';
 import Department from '../models/Department.js';
 import Report from '../models/Report.js';
-import { createAuditLog } from '../utils/audit.utils.js';
 import { AppError } from '../utils/AppError.js';
 import { buildScheduleSummary, isScheduleValid, normalizeSchedule } from '../utils/schedule.utils.js';
 import { applyReschedule, assertAppointmentCanBeRescheduled, getAvailableSlotsForDoctorDate } from '../utils/appointment.utils.js';
@@ -57,22 +56,7 @@ export const updateDoctorProfile = async (req, res) => {
   });
 
   await doctor.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'doctor.profile.updated',
-    entityType: 'doctor',
-    entityId: doctor._id,
-    message: 'Doctor updated profile and schedule details.',
-    metadata: {
-      department: doctor.department,
-      specialization: doctor.specialization,
-      consultationFee: doctor.consultationFee,
-    },
-  });
-
-  res.json({
+res.json({
     success: true,
     message: 'Doctor profile updated successfully.',
     data: {
@@ -134,20 +118,7 @@ export const updateAppointmentStatus = async (req, res) => {
   appointment.status = req.body.status;
   appointment.notes = req.body.notes;
   await appointment.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.status.updated',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: `Doctor changed appointment status to ${appointment.status}.`,
-    metadata: {
-      status: appointment.status,
-    },
-  });
-
-  res.json({ success: true, message: 'Appointment status updated.', data: appointment });
+res.json({ success: true, message: 'Appointment status updated.', data: appointment });
 };
 
 export const rescheduleDoctorAppointment = async (req, res) => {
@@ -185,24 +156,7 @@ export const rescheduleDoctorAppointment = async (req, res) => {
     timeSlot: req.body.timeSlot,
     reason: req.body.reason,
   });
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'appointment.rescheduled',
-    entityType: 'appointment',
-    entityId: appointment._id,
-    message: 'Doctor rescheduled an appointment.',
-    metadata: {
-      oldDate: previousDate,
-      oldTimeSlot: previousTimeSlot,
-      newDate: updated.date,
-      newTimeSlot: updated.timeSlot,
-      reason: req.body.reason || '',
-    },
-  });
-
-  res.json({ success: true, message: 'Appointment rescheduled successfully.', data: updated });
+res.json({ success: true, message: 'Appointment rescheduled successfully.', data: updated });
 };
 
 export const addPrescription = async (req, res) => {
@@ -244,23 +198,7 @@ export const addPrescription = async (req, res) => {
     advice: req.body.advice,
     reports: relatedReports.map((report) => report._id),
   });
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'prescription.created',
-    entityType: 'prescription',
-    entityId: prescription._id,
-    message: 'Doctor issued a prescription for a completed appointment.',
-    metadata: {
-      appointmentId: appointment._id,
-      patientId: appointment.patient,
-      linkedReports: relatedReports.map((report) => report._id),
-      medicineCount: req.body.medicines.length,
-    },
-  });
-
-  res.status(StatusCodes.CREATED).json({ success: true, message: 'Prescription added successfully.', data: prescription });
+res.status(StatusCodes.CREATED).json({ success: true, message: 'Prescription added successfully.', data: prescription });
 };
 
 export const getPatientHistory = async (req, res) => {

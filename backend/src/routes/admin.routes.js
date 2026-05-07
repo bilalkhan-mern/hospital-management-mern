@@ -10,7 +10,6 @@ import {
   getAdminDashboard,
   getAdmins,
   getAllAppointments,
-  getAuditLogs,
   getDoctors,
   getPatients,
   getPendingDoctors,
@@ -35,7 +34,6 @@ router.delete('/doctors/:id', deleteDoctor);
 router.delete('/doctors/:id/reject', rejectDoctor);
 router.get('/patients', getPatients);
 router.get('/appointments', getAllAppointments);
-router.get('/audit-logs', getAuditLogs);
 router.patch('/appointments/:id/payment', validate(appointmentPaymentSchema), updateAppointmentPayment);
 router.get('/admins', requireSuperAdmin, getAdmins);
 router.post('/admins', requireSuperAdmin, validate(adminCreateSchema), createAdminUser);

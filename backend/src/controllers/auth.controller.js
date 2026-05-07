@@ -1,12 +1,11 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { StatusCodes } from 'http-status-codes';
 import User from '../models/User.js';
 import Patient from '../models/Patient.js';
 import Doctor from '../models/Doctor.js';
 import Department from '../models/Department.js';
 import { AppError } from '../utils/AppError.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/token.utils.js';
+import { generateAccessToken } from '../utils/token.utils.js';
 import { normalizeSchedule } from '../utils/schedule.utils.js';
 import { normalizeAdminType } from '../utils/admin.utils.js';
 
@@ -121,7 +120,7 @@ export const registerDoctor = async (req, res) => {
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }).select('+password +refreshToken');
+  const user = await User.findOne({ email }).select('+password');
 
   if (!user) {
     throw new AppError('Invalid email or password.', StatusCodes.UNAUTHORIZED);
@@ -149,44 +148,14 @@ export const loginUser = async (req, res) => {
   }
 
   const accessToken = generateAccessToken({ id: user._id, role: user.role });
-  const refreshToken = generateRefreshToken({ id: user._id, role: user.role });
-
-  user.refreshToken = refreshToken;
-  await user.save();
-
   res.json({
     success: true,
     message: 'Login successful.',
     data: {
       accessToken,
-      refreshToken,
       user: await buildAuthPayload(user),
     },
   });
-};
-
-export const refreshAccessToken = async (req, res) => {
-  const { refreshToken } = req.body;
-
-  if (!refreshToken) {
-    throw new AppError('Refresh token is required.', StatusCodes.BAD_REQUEST);
-  }
-
-  let decoded;
-  try {
-    decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-  } catch (_error) {
-    throw new AppError('Invalid refresh token.', StatusCodes.UNAUTHORIZED);
-  }
-
-  const user = await User.findById(decoded.id).select('+refreshToken');
-  if (!user || user.refreshToken !== refreshToken) {
-    throw new AppError('Refresh token mismatch.', StatusCodes.UNAUTHORIZED);
-  }
-
-  const accessToken = generateAccessToken({ id: user._id, role: user.role });
-
-  res.json({ success: true, data: { accessToken } });
 };
 
 export const getCurrentUser = async (req, res) => {
@@ -197,11 +166,5 @@ export const getCurrentUser = async (req, res) => {
 };
 
 export const logoutUser = async (req, res) => {
-  const user = await User.findById(req.user._id).select('+refreshToken');
-  if (user) {
-    user.refreshToken = undefined;
-    await user.save();
-  }
-
   res.json({ success: true, message: 'Logged out successfully.' });
 };

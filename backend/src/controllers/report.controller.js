@@ -4,7 +4,6 @@ import Doctor from '../models/Doctor.js';
 import Patient from '../models/Patient.js';
 import Report from '../models/Report.js';
 import Prescription from '../models/Prescription.js';
-import { createAuditLog } from '../utils/audit.utils.js';
 import { AppError } from '../utils/AppError.js';
 import {
   getLocalReportPath,
@@ -178,24 +177,7 @@ export const uploadReport = async (req, res) => {
     { appointment: appointment._id },
     { $addToSet: { reports: report._id } }
   );
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'report.uploaded',
-    entityType: 'report',
-    entityId: report._id,
-    message: `${req.user.role === 'doctor' ? 'Doctor' : 'Patient'} uploaded ${type} report "${title}".`,
-    metadata: {
-      appointmentId: appointment._id,
-      patientId: patient._id,
-      doctorId: doctor?._id || appointment.doctor || null,
-      reportType: type,
-      uploadedBy,
-    },
-  });
-
-  const populatedReport = await populateReportQuery(Report.findById(report._id));
+const populatedReport = await populateReportQuery(Report.findById(report._id));
 
   res.status(StatusCodes.CREATED).json({
     success: true,
@@ -306,23 +288,7 @@ export const deleteReport = async (req, res) => {
 
   report.isDeleted = true;
   await report.save();
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'report.archived',
-    entityType: 'report',
-    entityId: report._id,
-    message: `Admin archived report "${report.title}".`,
-    metadata: {
-      appointmentId: report.appointmentId,
-      patientId: report.patientId,
-      doctorId: report.doctorId,
-      reportType: report.type,
-    },
-  });
-
-  res.json({ success: true, message: 'Report archived successfully.' });
+res.json({ success: true, message: 'Report archived successfully.' });
 };
 
 export const restoreReport = async (req, res) => {
@@ -342,22 +308,6 @@ export const restoreReport = async (req, res) => {
     { appointment: report.appointmentId },
     { $addToSet: { reports: report._id } }
   );
-
-  await createAuditLog({
-    actor: req.user._id,
-    actorRole: req.user.role,
-    action: 'report.restored',
-    entityType: 'report',
-    entityId: report._id,
-    message: `Admin restored report "${report.title}".`,
-    metadata: {
-      appointmentId: report.appointmentId,
-      patientId: report.patientId,
-      doctorId: report.doctorId,
-      reportType: report.type,
-    },
-  });
-
-  const populatedReport = await populateReportQuery(Report.findById(report._id));
+const populatedReport = await populateReportQuery(Report.findById(report._id));
   res.json({ success: true, message: 'Report restored successfully.', data: populatedReport });
 };
