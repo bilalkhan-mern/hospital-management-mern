@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import HomePage from '../pages/public/HomePage';
 import ProtectedRoute from '../components/routes/ProtectedRoute';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
@@ -13,7 +14,7 @@ import NotFoundPage from '../pages/shared/NotFoundPage';
 import RouteErrorPage from '../pages/shared/RouteErrorPage';
 
 export const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/dashboard" replace />, errorElement: <RouteErrorPage /> },
+  { path: '/', element: <HomePage />, errorElement: <RouteErrorPage /> },
   { path: '/login', element: <LoginPage />, errorElement: <RouteErrorPage /> },
   { path: '/register', element: <RegisterPage />, errorElement: <RouteErrorPage /> },
   { path: '/register-doctor', element: <DoctorRegisterPage />, errorElement: <RouteErrorPage /> },

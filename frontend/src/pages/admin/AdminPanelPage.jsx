@@ -1124,9 +1124,6 @@ const AdminPanelPage = () => {
       </section>
       )}
         </div>
-      </section>
-      )}
-        </div>
 
       {paymentModal.open && (
         <div className="fixed inset-0 z-30 flex items-center justify-center bg-slate-950/45 px-4">

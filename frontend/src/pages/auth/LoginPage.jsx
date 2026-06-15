@@ -39,6 +39,12 @@ const LoginPage = () => {
         <section className="card">
           <h2 className="text-2xl font-bold text-slate-900">Login</h2>
           <p className="mt-2 text-sm text-slate-500">Use your admin, doctor, or patient credentials.</p>
+          <div className="mt-4 rounded-3xl border border-brand-100 bg-brand-50/70 p-4">
+            <p className="text-sm font-semibold text-brand-700">Demo login hint</p>
+            <p className="mt-1 text-xs leading-6 text-slate-600">
+              Use the cards below to quickly sign in as <span className="font-semibold">Admin</span>, <span className="font-semibold">Doctor</span>, or <span className="font-semibold">Patient</span>.
+            </p>
+          </div>
           <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
             {loginError && <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{loginError}</p>}
             <div>
