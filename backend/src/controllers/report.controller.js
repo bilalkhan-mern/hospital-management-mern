@@ -43,8 +43,6 @@ const reportPopulate = [
   },
 ];
 
-const activeReportFilter = { isDeleted: false };
-
 const populateReportQuery = (query) => {
   let nextQuery = query;
   reportPopulate.forEach((populateConfig) => {
@@ -59,10 +57,6 @@ const ensureUserCanAccessReport = async (reportId, user) => {
   const report = await populateReportQuery(Report.findById(reportId));
   if (!report) {
     throw new AppError('Report not found.', StatusCodes.NOT_FOUND);
-  }
-
-  if (report.isDeleted && user.role !== 'admin') {
-    throw new AppError('This report is no longer available.', StatusCodes.NOT_FOUND);
   }
 
   if (user.role === 'admin') {
@@ -191,7 +185,7 @@ export const uploadReport = async (req, res) => {
     { appointment: appointment._id },
     { $addToSet: { reports: report._id } }
   );
-const populatedReport = await populateReportQuery(Report.findById(report._id));
+  const populatedReport = await populateReportQuery(Report.findById(report._id));
 
   res.status(StatusCodes.CREATED).json({
     success: true,
@@ -210,7 +204,7 @@ export const getReportsByPatient = async (req, res) => {
     throw new AppError('You do not have permission to access patient reports.', StatusCodes.FORBIDDEN);
   }
 
-  const filters = { patientId: req.params.id, ...activeReportFilter };
+  const filters = { patientId: req.params.id };
   const reports = await populateReportQuery(Report.find(filters).sort({ reportDate: -1, createdAt: -1 }));
   res.json({ success: true, data: reports });
 };
@@ -235,7 +229,7 @@ export const getReportsByAppointment = async (req, res) => {
     throw new AppError('You do not have permission to access appointment reports.', StatusCodes.FORBIDDEN);
   }
 
-  const reports = await populateReportQuery(Report.find({ appointmentId: appointment._id, ...activeReportFilter }).sort({ reportDate: -1, createdAt: -1 }));
+  const reports = await populateReportQuery(Report.find({ appointmentId: appointment._id }).sort({ reportDate: -1, createdAt: -1 }));
   res.json({ success: true, data: reports });
 };
 
@@ -244,10 +238,7 @@ export const getAllReports = async (req, res) => {
     throw new AppError('Only admin can access all reports.', StatusCodes.FORBIDDEN);
   }
 
-  const includeDeleted = req.query.includeDeleted === 'true';
-  const reports = await populateReportQuery(
-    Report.find(includeDeleted ? {} : activeReportFilter).sort({ createdAt: -1 })
-  );
+  const reports = await populateReportQuery(Report.find().sort({ createdAt: -1 }));
   res.json({ success: true, data: reports });
 };
 
@@ -283,28 +274,17 @@ export const deleteReport = async (req, res) => {
     throw new AppError('Report not found.', StatusCodes.NOT_FOUND);
   }
 
-  report.isDeleted = true;
-  await report.save();
-res.json({ success: true, message: 'Report archived successfully.' });
-};
-
-export const restoreReport = async (req, res) => {
-  if (req.user.role !== 'admin') {
-    throw new AppError('Only admin can restore reports.', StatusCodes.FORBIDDEN);
+  if (report.publicId) {
+    await cloudinary.uploader.destroy(report.publicId, {
+      resource_type: report.fileType === 'pdf' ? 'raw' : 'image',
+    }).catch(() => null);
   }
 
-  const report = await Report.findById(req.params.id);
-  if (!report) {
-    throw new AppError('Report not found.', StatusCodes.NOT_FOUND);
-  }
-
-  report.isDeleted = false;
-  await report.save();
-
+  await Report.deleteOne({ _id: report._id });
   await Prescription.updateOne(
     { appointment: report.appointmentId },
-    { $addToSet: { reports: report._id } }
+    { $pull: { reports: report._id } }
   );
-const populatedReport = await populateReportQuery(Report.findById(report._id));
-  res.json({ success: true, message: 'Report restored successfully.', data: populatedReport });
+
+  res.json({ success: true, message: 'Report deleted successfully.' });
 };

@@ -348,7 +348,7 @@ export const getPatientPrescriptions = async (req, res) => {
   const prescriptions = await Prescription.find({ patient: patient._id })
     .populate({ path: 'doctor', select: 'specialization user', populate: { path: 'user', select: 'name email' } })
     .populate('appointment', 'date timeSlot status')
-    .populate({ path: 'reports', match: { isDeleted: false }, select: 'title type reportDate fileType uploadedBy createdAt appointmentId doctorId patientId' })
+    .populate({ path: 'reports', select: 'title type reportDate fileType uploadedBy createdAt appointmentId doctorId patientId' })
     .sort({ createdAt: -1 });
 
   res.json({ success: true, data: prescriptions.map(normalizePrescriptionOutput) });

@@ -72,10 +72,6 @@ const reportSchema = new mongoose.Schema(
       enum: ['patient', 'doctor'],
       required: true,
     },
-    isDeleted: {
-      type: Boolean,
-      default: false,
-    },
   },
   { timestamps: true }
 );

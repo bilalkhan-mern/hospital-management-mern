@@ -207,7 +207,6 @@ export const getDoctorAppointments = async (req, res) => {
     }).select('appointment'),
     Report.find({
       appointmentId: { $in: appointmentIds },
-      isDeleted: false,
     }).select('appointmentId uploadedBy'),
   ]);
 
