@@ -32,8 +32,8 @@ const DemoCredentialsCard = ({ onPick }) => {
     <div className="mt-6 rounded-3xl border border-slate-200 bg-white/70 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900">Demo Accounts</h3>
-          <p className="mt-1 text-xs text-slate-500">For live demo/testing only. Use these to sign in quickly.</p>
+          <h3 className="text-sm font-semibold text-slate-900">Access Accounts</h3>
+          <p className="mt-1 text-xs text-slate-500">Choose the account type and fill the login form quickly.</p>
         </div>
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Password is case-sensitive</span>
       </div>
@@ -80,4 +80,3 @@ const DemoCredentialsCard = ({ onPick }) => {
 };
 
 export default DemoCredentialsCard;
-

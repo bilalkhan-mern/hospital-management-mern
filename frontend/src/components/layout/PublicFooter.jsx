@@ -7,7 +7,7 @@ const PublicFooter = () => {
             Care<span className="text-brand-500">Sync</span>
           </p>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-            A clean hospital management system for admin, doctor, and patient workflows with secure access and structured records.
+            A hospital management system for admin, doctor, and patient workflows with secure access and structured records.
           </p>
         </div>
         <div className="grid gap-3 text-sm text-slate-500 sm:grid-cols-2">
@@ -24,7 +24,7 @@ const PublicFooter = () => {
             <div className="mt-2 space-y-2">
               <p>24/7 Hospital Desk</p>
               <p>Secure Role Access</p>
-              <p>Demo Ready for Presentation</p>
+              <p>Clinical and administrative workflow</p>
             </div>
           </div>
         </div>

@@ -1,200 +1,164 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../../components/layout/PublicNavbar';
 import PublicFooter from '../../components/layout/PublicFooter';
 
-const slides = [
-  {
-    title: 'One workspace for hospital admin, doctors, and patients',
-    copy: 'Manage appointments, prescriptions, reports, and payments from one connected dashboard experience.',
-    badge: 'Role-based workflow',
-  },
-  {
-    title: 'Clean screens that are easy to explain in viva',
-    copy: 'Simple navigation, structured cards, and readable workflows make the project presentation friendly.',
-    badge: 'Fresher-friendly',
-  },
-  {
-    title: 'Demo accounts are included for quick testing',
-    copy: 'Use the login hints to sign in as admin, doctor, or patient and show the full working flow.',
-    badge: 'Demo ready',
-  },
-];
-
-const highlights = [
-  { label: 'Registered Patients', value: '1,240+' },
-  { label: 'Doctors Onboarded', value: '48' },
-  { label: 'Daily Appointments', value: '86' },
-  { label: 'Reports Processed', value: '310' },
+const overviewCards = [
+  { label: 'OPD Consultations', value: '128', note: 'Today' },
+  { label: 'Doctors Available', value: '42', note: 'Across departments' },
+  { label: 'Lab Reports', value: '96', note: 'Processed today' },
+  { label: 'Patient Records', value: '1,480', note: 'Updated securely' },
 ];
 
 const services = [
   {
-    title: 'Appointments',
-    copy: 'Patients book, doctors review, and admins monitor the visit pipeline.',
+    title: 'Outpatient Department',
+    copy: 'Appointments, doctor allocation, and consultation records managed in one place.',
+  },
+  {
+    title: 'Diagnostics',
+    copy: 'Lab reports, x-ray files, and clinical documents linked to the correct visit.',
   },
   {
     title: 'Prescriptions',
-    copy: 'Doctors generate structured prescriptions with medicines and advice.',
+    copy: 'Structured medicines, dosage details, and treatment instructions for patients.',
   },
-  {
-    title: 'Reports',
-    copy: 'Upload, preview, and manage PDF or image reports linked to appointments.',
-  },
+];
+
+const departments = [
+  'Cardiology',
+  'General Medicine',
+  'Orthopedics',
+  'Pediatrics',
+  'Dermatology',
+  'ENT',
 ];
 
 const workflow = [
-  'Patient logs in and books an appointment.',
-  'Doctor reviews the scheduled visit and marks it completed.',
-  'Prescription and reports are linked to the same appointment.',
-  'Admin monitors records, payments, and overall hospital activity.',
+  'Patient registers or signs in and books an appointment.',
+  'Doctor reviews the scheduled visit and completes the consultation.',
+  'Prescription and reports stay attached to the same appointment.',
+  'Admin monitors records, departments, billing, and overall activity.',
 ];
 
 const HomePage = () => {
-  const [activeSlide, setActiveSlide] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setActiveSlide((current) => (current + 1) % slides.length);
-    }, 4500);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
   return (
     <div id="home" className="min-h-screen">
       <PublicNavbar />
 
-      <main className="mx-auto w-full max-w-[1600px] px-4 py-8 sm:px-6 lg:px-8">
-        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="dashboard-hero">
-            <div className="dashboard-hero-grid">
-              <div>
-                <span className="dashboard-hero-kicker">Hospital Management System</span>
-                <h1 className="dashboard-hero-title">
-                  A professional hospital platform built for simple, clear, and role-based workflows.
-                </h1>
-                <p className="dashboard-hero-copy">
-                  Use the landing page to explain the project quickly, then move to login and demo the admin, doctor, and patient panels without confusion.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Link to="/login" className="btn-primary">
-                    Open Login
-                  </Link>
-                  <Link to="/dashboard" className="btn-secondary">
-                    View Panel Flow
-                  </Link>
-                </div>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  <span className="dashboard-hero-chip">Admin</span>
-                  <span className="dashboard-hero-chip">Doctor</span>
-                  <span className="dashboard-hero-chip">Patient</span>
-                  <span className="dashboard-hero-chip">Simple demo</span>
-                </div>
-              </div>
-
-              <div className="dashboard-hero-side">
-                <div className="dashboard-hero-panel">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="dashboard-hero-panel-label">Live Preview</span>
-                    <span className="data-chip">{slides[activeSlide].badge}</span>
-                  </div>
-                  <h2 className="dashboard-hero-panel-value">{slides[activeSlide].title}</h2>
-                  <p className="dashboard-hero-panel-copy">{slides[activeSlide].copy}</p>
-                </div>
-                <div className="mt-4 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-                  {slides.map((slide, index) => (
-                    <button
-                      key={slide.title}
-                      type="button"
-                      onClick={() => setActiveSlide(index)}
-                      className={`rounded-2xl border px-4 py-3 text-left transition ${
-                        index === activeSlide
-                          ? 'border-white/30 bg-white/15 text-white'
-                          : 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-                      }`}
-                    >
-                      <p className="text-xs uppercase tracking-[0.22em] text-white/55">Slide {index + 1}</p>
-                      <p className="mt-1 text-sm font-semibold">{slide.badge}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <span className="dashboard-hero-glow dashboard-hero-glow-left" />
-            <span className="dashboard-hero-glow dashboard-hero-glow-right" />
+      <main className="w-full">
+        <section className="relative overflow-hidden border-b border-slate-200/70 bg-[linear-gradient(135deg,rgba(15,23,42,0.98),rgba(8,47,73,0.95)_55%,rgba(15,118,110,0.9))] text-white">
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute left-[-8rem] top-[-6rem] h-72 w-72 rounded-full bg-teal-300/20 blur-3xl" />
+            <div className="absolute right-[-6rem] top-10 h-80 w-80 rounded-full bg-orange-300/10 blur-3xl" />
+            <div className="absolute bottom-[-5rem] left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
           </div>
 
-          <aside className="card">
-            <p className="section-title">Quick Stats</p>
-            <p className="section-copy">Sample data for a professional demo view.</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {highlights.map((item) => (
-                <div key={item.label} className="insight-card">
-                  <p className="insight-label">{item.label}</p>
-                  <p className="insight-value">{item.value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-slate-900">Demo Credentials Hint</p>
-              <p className="mt-1 text-sm text-slate-500">
-                Open login page for admin, doctor, and patient demo accounts.
+          <div className="relative mx-auto grid w-full max-w-[1800px] gap-8 px-4 py-16 sm:px-6 lg:px-8 xl:grid-cols-[1.15fr_0.85fr] xl:py-24">
+            <div className="max-w-4xl">
+              <span className="dashboard-hero-kicker text-teal-100/70">Hospital Management System</span>
+              <h1 className="mt-5 text-4xl font-extrabold tracking-tight text-white sm:text-5xl xl:text-6xl">
+                Care, records, appointments, and hospital operations in one connected platform.
+              </h1>
+              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-200 sm:text-lg">
+                Designed for real hospital workflows across admin, doctor, and patient use cases. The structure is clean, readable, and easy to present in viva or client review.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link className="data-chip" to="/login">Admin</Link>
-                <Link className="data-chip" to="/login">Doctor</Link>
-                <Link className="data-chip" to="/login">Patient</Link>
+
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link to="/login" className="btn-primary">
+                  Login
+                </Link>
+                <Link to="/register" className="btn-secondary border-white/20 bg-white/10 text-white hover:border-white/30 hover:bg-white/15 hover:text-white">
+                  Patient Registration
+                </Link>
+              </div>
+
+              <div className="mt-8 flex flex-wrap gap-2">
+                <span className="dashboard-hero-chip">OPD</span>
+                <span className="dashboard-hero-chip">IPD</span>
+                <span className="dashboard-hero-chip">Diagnostics</span>
+                <span className="dashboard-hero-chip">Prescriptions</span>
+                <span className="dashboard-hero-chip">Billing</span>
               </div>
             </div>
-          </aside>
-        </section>
 
-        <section id="services" className="mt-8 grid gap-4 lg:grid-cols-3">
-          {services.map((service) => (
-            <article key={service.title} className="card">
-              <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-500">Module</p>
-              <h2 className="mt-3 text-xl font-extrabold text-slate-900">{service.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500">{service.copy}</p>
-            </article>
-          ))}
-        </section>
-
-        <section id="workflow" className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <article className="card">
-            <p className="section-title">How It Works</p>
-            <p className="section-copy">A very simple flow you can explain in presentation.</p>
-            <div className="mt-6 space-y-3">
-              {workflow.map((step, index) => (
-                <div key={step} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">Step {index + 1}</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-800">{step}</p>
+            <aside className="rounded-[32px] border border-white/15 bg-white/10 p-6 backdrop-blur">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.32em] text-white/55">Hospital Overview</p>
+                  <h2 className="mt-2 text-2xl font-extrabold text-white">Today at a glance</h2>
                 </div>
-              ))}
-            </div>
-          </article>
+                <span className="data-chip bg-white/10 text-white">Live view</span>
+              </div>
 
-          <article className="card overflow-hidden">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="section-title">Why this project feels professional</p>
-                <p className="section-copy">Clear landing page, clear login hints, and role-specific panels.</p>
+              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                {overviewCards.map((item) => (
+                  <div key={item.label} className="rounded-[24px] border border-white/10 bg-white/10 p-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-white/55">{item.label}</p>
+                    <p className="mt-2 text-3xl font-extrabold text-white">{item.value}</p>
+                    <p className="mt-1 text-sm text-slate-200">{item.note}</p>
+                  </div>
+                ))}
               </div>
-              <Link to="/register" className="btn-primary w-fit">
-                Start as Patient
-              </Link>
+            </aside>
+          </div>
+        </section>
+
+        <section className="mx-auto w-full max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
+          <div className="grid gap-4 lg:grid-cols-3">
+            {services.map((service) => (
+              <article key={service.title} className="card">
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-brand-500">Hospital Service</p>
+                <h2 className="mt-3 text-xl font-extrabold text-slate-900">{service.title}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-500">{service.copy}</p>
+              </article>
+            ))}
+          </div>
+
+          <section className="mt-8 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <article className="card">
+              <p className="section-title">Departments</p>
+              <p className="section-copy">Main clinical areas available in the hospital flow.</p>
+              <div className="mt-6 flex flex-wrap gap-2">
+                {departments.map((department) => (
+                  <span key={department} className="data-chip">
+                    {department}
+                  </span>
+                ))}
+              </div>
+            </article>
+
+            <article className="card">
+              <p className="section-title">Hospital Workflow</p>
+              <p className="section-copy">Clear process flow from appointment booking to records management.</p>
+              <div className="mt-6 space-y-3">
+                {workflow.map((step, index) => (
+                  <div key={step} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">Step {index + 1}</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </article>
+          </section>
+
+          <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="insight-card">
+              <p className="insight-label">Emergency Support</p>
+              <p className="insight-value">24/7</p>
             </div>
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <div className="rounded-[24px] bg-slate-900 p-5 text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.26em] text-white/65">Presentation</p>
-                <p className="mt-3 text-lg font-bold">Simple enough to explain, strong enough to demo.</p>
-              </div>
-              <div className="rounded-[24px] bg-brand-500 p-5 text-white">
-                <p className="text-xs font-bold uppercase tracking-[0.26em] text-white/70">Demo Ready</p>
-                <p className="mt-3 text-lg font-bold">Admin, doctor, and patient logins are visible on the login page.</p>
-              </div>
+            <div className="insight-card">
+              <p className="insight-label">Secure Records</p>
+              <p className="insight-value">Encrypted</p>
             </div>
-          </article>
+            <div className="insight-card">
+              <p className="insight-label">Doctor Access</p>
+              <p className="insight-value">Role Based</p>
+            </div>
+            <div className="insight-card">
+              <p className="insight-label">Patient Care</p>
+              <p className="insight-value">Connected</p>
+            </div>
+          </section>
         </section>
       </main>
 
